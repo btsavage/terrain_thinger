@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="cross_browser_utility_methods.js"></script>
+        <script type="text/javascript" src="sylvester.src.js"></script>
+        <script type="text/javascript" src="glUtils.js"></script>
+        <script type="text/javascript" src="main.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css">
+        
+        <!-- Fragment shader program -->
+        <script id="shader-fs" type="x-shader/x-fragment">
+            varying lowp vec4 vColor;
+            void main(void) {
+                gl_FragColor = vColor;
+            }
+        </script>
+
+        <!-- Vertex shader program -->
+        <script id="shader-vs" type="x-shader/x-vertex">
+            attribute vec3 aVertexPosition;
+            attribute vec4 aVertexColor;
+
+            uniform mat4 uMVMatrix;
+            uniform mat4 uPMatrix;
+
+            varying lowp vec4 vColor;
+
+            void main(void) {
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+                vColor = aVertexColor;
+            }
+        </script>
+    </head>
+    <body onload="start()">
+    </body>
+</html>

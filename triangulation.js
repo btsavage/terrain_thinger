@@ -14,7 +14,6 @@ Triangulation.prototype = {
 			var tri = this.searchStartPoint(x, y);
 			while( !tri.contains(x, y) ){
 				var edge = tri.edgeCrossed(x, y);
-				debugger;
 				var neighbor = tri.neighbors[ edge ];
 				if( !neighbor ){
 					var p1, p2;
@@ -59,7 +58,8 @@ Triangulation.prototype = {
 			var tri1 = dirtyEdge[0];
 			var edge = dirtyEdge[1];
 			if( !tri1.edgeDelaunay( edge ) ){
-			
+				tri1.flip( edge );
+				console.log("edge was flipped!");
 			}
 		}
 	}

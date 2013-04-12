@@ -100,11 +100,7 @@ Triangle.prototype = {
 		}
 		
 		this.idx2 = splitPointIdx;
-		this.matrix = null;
-		this.centroid = null;
-		this.cv1 = null;
-		this.cv2 = null;
-		this.cv3 = null;
+		this.invalidate();
 		this.neighbors[0] = newTri1;
 		this.neighbors[1] = newTri2;
 		
@@ -130,10 +126,11 @@ Triangle.prototype = {
 		var angle2 = NaN;
 		for( var i = 0; i < 3; i++ ){
 			if(neighbor.neighbors[i] === this){
-				angle2 = neighbors.angleToEdge(i);
+				angle2 = neighbor.angleToEdge(i);
 			}
 		}
 		
+		debugger;
 		var angle1 = this.angleToEdge(edge);
 		return (angle1 + angle2) < Math.PI;
 	},
@@ -166,5 +163,70 @@ Triangle.prototype = {
 			this.points[c].y - this.points[b].y
 		]);
 		return v1.angleFrom( v2 );
+	},
+	flip: function flip(edge){
+		var neighbor = this.neighbors[edge];
+		var otherEdge = -1;
+		loop: for( var i = 0; i < 3; i++ ){
+			if( neighbor.neighbors[i] === this ){
+				otherEdge = i;
+				break loop;
+			}
+		}
+		
+		var t1_swap_idx = (edge+1)%3;
+		var t2_swap_idx = (otherEdge+1)%3;
+		
+		this.setIndex( t1_swap_idx, neighbor.getIndex( (t2_swap_idx+1)%3 ) );
+		neighbor.setIndex( t2_swap_idx, this.getIndex( (t1_swap_idx+1)%3 ) );
+		
+		var B = neighbor.neighbors[ t2_swap_idx ];
+		var D = this.neighbors[ t1_swap_idx ];
+		
+		this.neighbors[edge] = B;
+		if( B ){
+			B.replaceNeighbor(neighbor, this);
+		}
+		
+		neighbor.neighbors[otherEdge] = D;
+		if( D ){
+			D.replaceNeighbor(this, neighbor);
+		}
+		
+		this.neighbors[t1_swap_idx] = neighbor;
+		neighbor[t2_swap_idx] = this;
+		
+		this.invalidate();
+		neighbor.invalidate();
+	},
+	invalidate: function invalidate(){
+		this.matrix = null;
+		this.centroid = null;
+		this.cv1 = null;
+		this.cv2 = null;
+		this.cv3 = null;
+	},
+	getIndex: function getIndex(idx){
+		switch( idx ){
+		case 0:
+			return this.idx1;
+		case 1:
+			return this.idx2;
+		case 2:
+			return this.idx3;
+		}
+	},
+	setIndex: function setIndex(idx, value){
+		switch( idx ){
+		case 0:
+			this.idx1 = value;
+			break;
+		case 1:
+			this.idx2 = value;
+			break;
+		case 2:
+			this.idx3 = value;
+			break;
+		}
 	}
 }

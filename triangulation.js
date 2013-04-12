@@ -14,6 +14,7 @@ Triangulation.prototype = {
 			var tri = this.searchStartPoint(x, y);
 			while( !tri.contains(x, y) ){
 				var edge = tri.edgeCrossed(x, y);
+				debugger;
 				var neighbor = tri.neighbors[ edge ];
 				if( !neighbor ){
 					var p1, p2;
@@ -38,20 +39,28 @@ Triangulation.prototype = {
 					tri.neighbors[edge] = newTri;
 					newTri.neighbors[0] = tri;
 					
-					this.ensureDelaunay();
+					this.ensureDelaunay([[tri, edge]]);
 					return;
 				}else{
 					tri = neighbor;
 				}
 			}
-			tri.split( this.points.length-1, this.triangles );
-			this.ensureDelaunay();
+			var dirtyEdges = [];
+			tri.split( this.points.length-1, this.triangles, dirtyEdges );
+			this.ensureDelaunay(dirtyEdges);
 		}
 	},
 	searchStartPoint: function searchStartPoint(x, y){
 		return this.triangles[0];
 	},
-	ensureDelaunay: function ensureDelaunay(){
-		// XXX: Implement this
+	ensureDelaunay: function ensureDelaunay( dirtyEdges ){
+		while( dirtyEdges.length > 0 ){
+			var dirtyEdge = dirtyEdges.shift();
+			var tri1 = dirtyEdge[0];
+			var edge = dirtyEdge[1];
+			if( !tri1.edgeDelaunay( edge ) ){
+			
+			}
+		}
 	}
 };

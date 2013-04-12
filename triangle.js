@@ -79,7 +79,7 @@ Triangle.prototype = {
 			return 2;
 		}
 	},
-	split: function split(splitPointIdx, trianglesList){
+	split: function split(splitPointIdx, trianglesList, dirtyEdges){
 		var newTri1 = new Triangle(this.points, this.idx1, this.idx2, splitPointIdx);
 		var newTri2 = new Triangle(this.points, splitPointIdx, this.idx2, this.idx3);
 //		var newTri3 = new Triangle(this.points, tri.idx3, tri.idx1, splitPointIdx);
@@ -109,6 +109,7 @@ Triangle.prototype = {
 		this.neighbors[1] = newTri2;
 		
 		trianglesList.push( newTri1, newTri2 );
+		dirtyEdges.push( [newTri1, 0], [newTri1, 2], [newTri2, 0], [newTri2, 1], [this, 1], [this, 2] );
 	},
 	replaceNeighbor: function replaceNeighbor(oldTri, newTri){
 		for( var i = 0; i < 3; i++ ){
@@ -119,5 +120,51 @@ Triangle.prototype = {
 		}
 		debugger;
 		alert("could not replaceNeighbor");
+	},
+	edgeDelaunay: function edgeDelaunay(edge){
+		var neighbor = this.neighbors[edge];
+		if( !neighbor ){
+			return true;
+		}
+		
+		var angle2 = NaN;
+		for( var i = 0; i < 3; i++ ){
+			if(neighbor.neighbors[i] === this){
+				angle2 = neighbors.angleToEdge(i);
+			}
+		}
+		
+		var angle1 = this.angleToEdge(edge);
+		return (angle1 + angle2) < Math.PI;
+	},
+	angleToEdge: function angleToEdge(edge){
+		var a, b, c;
+		
+		switch( edge ){
+		case 0:
+			a = this.idx2;
+			b = this.idx3;
+			c = this.idx1;
+			break;
+		case 1:
+			a = this.idx3;
+			b = this.idx1;
+			c = this.idx2;
+			break;
+		case 2:
+			a = this.idx1;
+			b = this.idx2;
+			c = this.idx3;
+			break;
+		}
+		var v1 = $V([
+			this.points[a].x - this.points[b].x, 
+			this.points[a].y - this.points[b].y
+		]);
+		var v2 = $V([
+			this.points[c].x - this.points[b].x, 
+			this.points[c].y - this.points[b].y
+		]);
+		return v1.angleFrom( v2 );
 	}
 }

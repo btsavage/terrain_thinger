@@ -1,10 +1,4 @@
-#ifdef __APPLE__
-	#include <OpenGL/gl.h>
-	#include <Glut/glut.h>
-#else
-	#include <GL/gl.h>
-	#include <GL/glut.h>
-#endif
+#include "renderer/render_platform.h"
 
 #include <stdio.h>
 
@@ -21,6 +15,8 @@ static void Reshape(int width, int height)
 {
 	windowWidth = width;
 	windowHeight = height;
+	
+	pGameInst->SetScreenSize(windowWidth, windowHeight);
 }
 
 static void Draw()
@@ -30,9 +26,6 @@ static void Draw()
 
 	pGameInst->Update();
 
-	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	
 	pGameInst->Render();
 
 	glutSwapBuffers();
@@ -103,6 +96,7 @@ static void Idle()
 static void Init()
 {
 	pGameInst = new Game;
+	pGameInst->SetScreenSize(windowWidth, windowHeight);
 }
 
 

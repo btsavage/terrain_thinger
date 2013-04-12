@@ -13,6 +13,7 @@
 
 			"include_dirs": [
 				"cpp_code",
+				"cpp_code/glm",
 			],
 			
 			'link_settings': {

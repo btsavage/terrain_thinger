@@ -29,7 +29,7 @@ Triangle.prototype = {
 		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) ).elements;
 		return (result[0] >= 0) && (result[1] >= 0) && (result[0] <= 1 ) && (result[1] <= 1 ) && (result[0] + result[1] <= 1);
 	},
-	edgeCrossed: function edgeCrossed(x, y){
+	edgeCrossed: function edgeCrossed(x, y, context){
 		if( !this.centroid || !this.cv1 || !this.cv2 || !this.cv3 ){
 			this.centroid = {
 				x: (this.points[ this.idx1 ].x + this.points[ this.idx2 ].x + this.points[ this.idx3 ].x)/3,
@@ -50,32 +50,40 @@ Triangle.prototype = {
 		var test1 = this.cv1.dot( v );
 		var test2 = this.cv2.dot( v );
 		var test3 = this.cv3.dot( v );
-		
-		context.strokeStyle = "rgb(255, 0, 255)";
-		context.beginPath();
-		context.moveTo( this.centroid.x, this.centroid.y );
-		context.lineTo( x, y );
-		context.stroke();
-		if( test1 >= 0 && test2 <= 0 ){
-			context.strokeStyle = "rgb(0, 0, 255)";
+
+		if( context ){
+			context.strokeStyle = "rgb(255, 0, 255)";
 			context.beginPath();
-			context.moveTo( this.points[this.idx1].x, this.points[this.idx1].y );
-			context.lineTo( this.points[this.idx2].x, this.points[this.idx2].y );
+			context.moveTo( this.centroid.x, this.centroid.y );
+			context.lineTo( x, y );
 			context.stroke();
+		}
+		if( test1 >= 0 && test2 <= 0 ){
+			if( context ){
+				context.strokeStyle = "rgb(0, 0, 255)";
+				context.beginPath();
+				context.moveTo( this.points[this.idx1].x, this.points[this.idx1].y );
+				context.lineTo( this.points[this.idx2].x, this.points[this.idx2].y );
+				context.stroke();
+			}
 			return 0;
 		}else if( test2 >= 0 && test3 <= 0 ){
-			context.strokeStyle = "rgb(0, 0, 255)";
-			context.beginPath();
-			context.moveTo( this.points[this.idx2].x, this.points[this.idx2].y );
-			context.lineTo( this.points[this.idx3].x, this.points[this.idx3].y );
-			context.stroke();
+			if( context ){
+				context.strokeStyle = "rgb(0, 0, 255)";
+				context.beginPath();
+				context.moveTo( this.points[this.idx2].x, this.points[this.idx2].y );
+				context.lineTo( this.points[this.idx3].x, this.points[this.idx3].y );
+				context.stroke();
+			}
 			return 1;
 		}else{
-			context.strokeStyle = "rgb(0, 0, 255)";
-			context.beginPath();
-			context.moveTo( this.points[this.idx3].x, this.points[this.idx3].y );
-			context.lineTo( this.points[this.idx1].x, this.points[this.idx1].y );
-			context.stroke();
+			if( context ){
+				context.strokeStyle = "rgb(0, 0, 255)";
+				context.beginPath();
+				context.moveTo( this.points[this.idx3].x, this.points[this.idx3].y );
+				context.lineTo( this.points[this.idx1].x, this.points[this.idx1].y );
+				context.stroke();
+			}
 			return 2;
 		}
 	},
@@ -106,6 +114,28 @@ Triangle.prototype = {
 		
 		trianglesList.push( newTri1, newTri2 );
 		dirtyEdges.push( [newTri1, 0], [newTri1, 2], [newTri2, 0], [newTri2, 1], [this, 1], [this, 2] );
+	},
+	interpolate: function interpolate(x, y, k){
+		var p1 = this.points[this.idx1];
+		var p2 = this.points[this.idx2];
+		var p3 = this.points[this.idx3];
+		if( !this.matrix ){
+			this.matrix = $M([
+				[p2.x - p1.x, p3.x - p1.x],
+				[p2.y - p1.y, p3.y - p1.y]
+			]).inv();
+		}
+		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) );
+		var u = result.elements[0];
+		var v = result.elements[1];
+
+		var d1 = Math.sqrt( (p1.x - x)*(p1.x - x) + (p1.y - y)*(p1.y - y) );
+		var d2 = Math.sqrt( (p2.x - x)*(p2.x - x) + (p2.y - y)*(p2.y - y) );
+		var d3 = Math.sqrt( (p3.x - x)*(p3.x - x) + (p3.y - y)*(p3.y - y) );
+		
+		var minDistance = Math.min( d1, d2, d3 );
+		
+		return p1.z + result.dot( $V([p2.z - p1.z, p3.z - p1.z]) ) + minDistance*k*(2*Math.random()-1);
 	},
 	replaceNeighbor: function replaceNeighbor(oldTri, newTri){
 		for( var i = 0; i < 3; i++ ){

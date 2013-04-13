@@ -1,11 +1,16 @@
+K = 0.3;
+
 function Triangulation(){
 	this.points = [];
 	this.triangles = [];
 }
 
 Triangulation.prototype = {
-	addPoint: function addPoint( x, y ){
-		this.points.push( {x:x, y:y} );
+	addPoint: function addPoint( x, y, z ){
+		var pt = {x:x, y:y, z:z};
+		var generateZValue = (typeof(z) === "undefined");
+
+		this.points.push( pt );
 		if( this.points.length < 3 ){
 			return;
 		}else if( this.points.length === 3 ){
@@ -45,6 +50,9 @@ Triangulation.prototype = {
 				}
 			}
 			var dirtyEdges = [];
+			if( generateZValue ){
+				pt.z = tri.interpolate( x, y, K );
+			}
 			tri.split( this.points.length-1, this.triangles, dirtyEdges );
 			this.ensureDelaunay(dirtyEdges);
 		}
@@ -65,5 +73,36 @@ Triangulation.prototype = {
 				console.log("edge was flipped!");
 			}
 		}
+	},
+	exportVertices: function exportVertices(){
+		var values = [];
+		for( var i = 0; i < this.points.length; i++ ){
+			var vertex = this.points[i];
+			values[3*i] = vertex.x;
+			values[3*i + 1] = vertex.z;
+			values[3*i + 2] = vertex.y;
+			
+		}
+		return new Float32Array(values);
+	},
+	exportVertexColors: function exportVertexColors(){
+		var vertexColors = [];
+		for( var i = 0; i < this.points.length; i++ ){
+			vertexColors[4*i] = Math.random();
+			vertexColors[4*i+1] = Math.random();
+			vertexColors[4*i+2] = Math.random();
+			vertexColors[4*i+3] = 1;
+		}
+		return new Float32Array(vertexColors);
+	},
+	exportIndexBuffer: function exportIndexBuffer(){
+		var indices = [];
+		for( var i = 0; i < this.triangles.length; i++ ){
+			var triangle = this.triangles[i];
+			indices[3*i] = triangle.idx1;
+			indices[3*i+1] = triangle.idx2;
+			indices[3*i+2] = triangle.idx3;
+		}
+		return new Uint16Array(indices);
 	}
 };

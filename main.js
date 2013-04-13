@@ -1,3 +1,4 @@
+"use strict";
 var canvas = null;
 var gl = null;
 
@@ -43,7 +44,6 @@ var inertialMovement = false;
 function onMouseDown(e){
 	inertialMovement = false;
 	
-	console.log("down");
 	mouseDownX = e.screenX;
 	mouseDownY = e.screenY;
 	mouseDownTheta = theta;
@@ -53,18 +53,14 @@ function onMouseDown(e){
 
 function onMouseUp(e){
 	inertialMovement = true;
-	console.log("up");
 	canvas.removeEventListener( "mousemove", onMouseMove );
 	
 	var deltaTime = Date.now() - lastMouseTime;
-	console.log( "onMouseUp(); deltaTime: " + deltaTime + ", thetaVelocity: " + thetaVelocity );
 }
 
 function onMouseMove(e){
-	console.log("move");
 	var deltaX = e.screenX - mouseDownX;
 	var deltaY = e.screenY - mouseDownY;
-	console.log( deltaX, deltaY );
 
 	var newTheta = mouseDownTheta + deltaX*3*2*Math.PI/(canvas.width);
 	var newPhi = Math.min(Math.PI/2, Math.max(-Math.PI/2, mouseDownPhi + deltaY*5*Math.PI/(canvas.height)));
@@ -79,8 +75,6 @@ function onMouseMove(e){
 }
 
 function onResize(){
-	console.log("resized");
-	
 	var dimensions = pageSize();
 	canvas.width = dimensions.width;
 	canvas.height = dimensions.height;
@@ -88,6 +82,9 @@ function onResize(){
 	gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
+var shaderProgram;
+var vertexPositionAttribute;
+var vertexColorAttribute;
 function initShaders() {
 	var fragmentShader = getShader(gl, "shader-fs");
 	var vertexShader = getShader(gl, "shader-vs");
@@ -148,7 +145,16 @@ function getShader(gl, id) {
 	return shader;
 }
 var NUM_VERTS = 10;
+var NUM_TERRAIN_VERTS = 0;
+var NUM_TERRAIN_INDICES = 0;
 
+var squareVerticesBuffer;
+var squareVerticesColorBuffer;
+
+var terrainVerticesBuffer;
+var terrainVerticesColorBuffer;
+var terrainIndexBuffer;
+var terrain;
 function initBuffers() {
 	squareVerticesBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
@@ -184,6 +190,41 @@ function initBuffers() {
 	squareVerticesColorBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+	
+	// Terrain
+	terrainVerticesBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
+	
+	terrain = new Triangulation();
+	terrain.addPoint(-1, -1, Math.random()-0.5);
+	terrain.addPoint(1, -1, Math.random()-0.5);
+	terrain.addPoint(-1, 1, Math.random()-0.5);
+	terrain.addPoint(1, 1, Math.random()-0.5);
+	for( var i = 0; i < 2000; i++ ){
+		terrain.addPoint( 2*Math.random()-1, 2*Math.random()-1 );
+	}
+	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertices(), gl.STATIC_DRAW);
+	
+	// Terrain Color
+	terrainVerticesColorBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesColorBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertexColors(), gl.STATIC_DRAW);
+	
+	NUM_TERRAIN_VERTS = terrain.points.length;
+	
+	// Indices
+	terrainIndexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, terrainIndexBuffer);
+	var indices = terrain.exportIndexBuffer();
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+	NUM_TERRAIN_INDICES = indices.length;
+}
+
+function addPoint(){
+	terrain.addPoint( 2*Math.random()-1, 2*Math.random()-1 );
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertices(), gl.STATIC_DRAW);
 }
 
 var THETA_FRICTION = 0.005;
@@ -229,7 +270,7 @@ function drawScene() {
 	
 	// Update values for perspective and model-view matrices
 	var perspectiveMatrix = makePerspective(45, canvas.width/canvas.height, 0.1, 100.0);
-	var mvMatrix = Matrix.I(4).x(Matrix.Translation($V([0.0, 0.0, -6.0])).ensure4x4());
+	var mvMatrix = Matrix.I(4).x(Matrix.Translation($V([0.0, 0.0, -3.0])).ensure4x4());
 	
 	var phiRotationMatrix = Matrix.Rotation(phi, $V([1, 0, 0])).ensure4x4();
 	mvMatrix = mvMatrix.x(phiRotationMatrix);
@@ -243,12 +284,22 @@ function drawScene() {
 	gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 	
 	// Bind model data
+/*
 	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
 	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
 	gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
 	
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, NUM_VERTS);
+*/
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesColorBuffer);
+	gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, terrainIndexBuffer);
+	gl.drawElements(gl.TRIANGLES, NUM_TERRAIN_INDICES, gl.UNSIGNED_SHORT, 0);
 
 	raf(drawScene);
 }

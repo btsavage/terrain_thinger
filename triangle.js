@@ -130,7 +130,6 @@ Triangle.prototype = {
 			}
 		}
 		
-		debugger;
 		var angle1 = this.angleToEdge(edge);
 		return (angle1 + angle2) < Math.PI;
 	},
@@ -164,7 +163,7 @@ Triangle.prototype = {
 		]);
 		return v1.angleFrom( v2 );
 	},
-	flip: function flip(edge){
+	flip: function flip(edge, dirtyEdges){
 		var neighbor = this.neighbors[edge];
 		var otherEdge = -1;
 		loop: for( var i = 0; i < 3; i++ ){
@@ -174,14 +173,16 @@ Triangle.prototype = {
 			}
 		}
 		
-		var t1_swap_idx = (edge+1)%3;
-		var t2_swap_idx = (otherEdge+1)%3;
+		var edge_plus1 = (edge+1)%3;
+		var otherEdge_plus_1 = (otherEdge+1)%3;
+		var edge_plus_2 = (edge+2)%3;
+		var otherEdge_plus_2 = (otherEdge+2)%3;
 		
-		this.setIndex( t1_swap_idx, neighbor.getIndex( (t2_swap_idx+1)%3 ) );
-		neighbor.setIndex( t2_swap_idx, this.getIndex( (t1_swap_idx+1)%3 ) );
+		this.setIndex( edge_plus1, neighbor.getIndex( otherEdge_plus_2 ) );
+		neighbor.setIndex( otherEdge_plus_1, this.getIndex( edge_plus_2 ) );
 		
-		var B = neighbor.neighbors[ t2_swap_idx ];
-		var D = this.neighbors[ t1_swap_idx ];
+		var B = neighbor.neighbors[ otherEdge_plus_1 ];
+		var D = this.neighbors[ edge_plus1 ];
 		
 		this.neighbors[edge] = B;
 		if( B ){
@@ -193,11 +194,23 @@ Triangle.prototype = {
 			D.replaceNeighbor(this, neighbor);
 		}
 		
-		this.neighbors[t1_swap_idx] = neighbor;
-		neighbor[t2_swap_idx] = this;
+		this.neighbors[edge_plus1] = neighbor;
+		neighbor.neighbors[otherEdge_plus_1] = this;
 		
 		this.invalidate();
 		neighbor.invalidate();
+		
+		// Remove any dirty edges related to the new completely different flipped triangles
+		for( var i = 0; i < dirtyEdges.length; i++ ){
+			var dirtyTriangle = dirtyEdges[i][0]
+			if( dirtyTriangle === this || dirtyTriangle === neighbor ){
+				dirtyEdges[i] = null;
+			}
+		}
+		// Make all 4 newly changed edges marked as dirty
+		dirtyEdges.push( [this, edge], [this, edge_plus_2], [neighbor, otherEdge], [neighbor, otherEdge_plus_2] );
+		
+		this.validateNeighbors();
 	},
 	invalidate: function invalidate(){
 		this.matrix = null;
@@ -227,6 +240,13 @@ Triangle.prototype = {
 		case 2:
 			this.idx3 = value;
 			break;
+		}
+	},
+	validateNeighbors: function validateNeighbors(){
+		for( var i = 0; i < 3; i++ ){
+			if( this.neighbors[i] ){
+				this.neighbors[i].replaceNeighbor(this, this);
+			}
 		}
 	}
 }

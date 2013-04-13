@@ -55,10 +55,13 @@ Triangulation.prototype = {
 	ensureDelaunay: function ensureDelaunay( dirtyEdges ){
 		while( dirtyEdges.length > 0 ){
 			var dirtyEdge = dirtyEdges.shift();
+			if( dirtyEdge === null ){
+				continue;
+			}
 			var tri1 = dirtyEdge[0];
 			var edge = dirtyEdge[1];
 			if( !tri1.edgeDelaunay( edge ) ){
-				tri1.flip( edge );
+				tri1.flip( edge, dirtyEdges );
 				console.log("edge was flipped!");
 			}
 		}

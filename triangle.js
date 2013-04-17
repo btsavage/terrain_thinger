@@ -29,6 +29,15 @@ Triangle.prototype = {
 		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) ).elements;
 		return (result[0] >= 0) && (result[1] >= 0) && (result[0] <= 1 ) && (result[1] <= 1 ) && (result[0] + result[1] <= 1);
 	},
+	getCentroid: function getCentroid(){
+		if( !this.centroid ){
+			this.centroid = {
+				x: (this.points[ this.idx1 ].x + this.points[ this.idx2 ].x + this.points[ this.idx3 ].x)/3,
+				y: (this.points[ this.idx1 ].y + this.points[ this.idx2 ].y + this.points[ this.idx3 ].y)/3
+			};
+		}
+		return this.centroid;
+	},
 	edgeCrossed: function edgeCrossed(x, y, context){
 		if( !this.centroid || !this.cv1 || !this.cv2 || !this.cv3 ){
 			this.centroid = {

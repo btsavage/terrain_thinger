@@ -34,7 +34,7 @@ function onMouseDown(e){
 }
 
 function onMouseUp(e){
-	triangulation.addPoint( e.clientX, e.clientY );
+	triangulation.addPoint( e.clientX, e.clientY, 0, context );
 	raf(drawScene);
 }
 

@@ -1,4 +1,4 @@
-K = 0.3;
+K = 1;
 
 function Triangulation(){
 	this.points = [];
@@ -6,7 +6,7 @@ function Triangulation(){
 }
 
 Triangulation.prototype = {
-	addPoint: function addPoint( x, y, z ){
+	addPoint: function addPoint( x, y, z, context ){
 		var pt = {x:x, y:y, z:z};
 		var generateZValue = (typeof(z) === "undefined");
 
@@ -18,7 +18,7 @@ Triangulation.prototype = {
 		}else{
 			var tri = this.searchStartPoint(x, y);
 			while( !tri.contains(x, y) ){
-				var edge = tri.edgeCrossed(x, y);
+				var edge = tri.edgeCrossed(x, y, context);
 				var neighbor = tri.neighbors[ edge ];
 				if( !neighbor ){
 					var p1, p2;
@@ -58,7 +58,18 @@ Triangulation.prototype = {
 		}
 	},
 	searchStartPoint: function searchStartPoint(x, y){
-		return this.triangles[0];
+		var closestTriangle = null;
+		var smallestSquaredDistance = Number.POSITIVE_INFINITY;
+		for( var i = 0; i < this.triangles.length; i++ ){
+			var tempTriangle = this.triangles[i];
+			var tempPoint = tempTriangle.getCentroid();
+			var tempSquaredDistance = (tempPoint.x - x)*(tempPoint.x - x) + (tempPoint.y - y)*(tempPoint.y - y);
+			if( tempSquaredDistance < smallestSquaredDistance ){
+				closestTriangle = tempTriangle;
+				smallestSquaredDistance = tempSquaredDistance;
+			}
+		}
+		return closestTriangle;
 	},
 	ensureDelaunay: function ensureDelaunay( dirtyEdges ){
 		while( dirtyEdges.length > 0 ){
@@ -70,7 +81,6 @@ Triangulation.prototype = {
 			var edge = dirtyEdge[1];
 			if( !tri1.edgeDelaunay( edge ) ){
 				tri1.flip( edge, dirtyEdges );
-				console.log("edge was flipped!");
 			}
 		}
 	},

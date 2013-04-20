@@ -121,11 +121,40 @@ Triangle.prototype = {
 		}
 	},
 	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, trianglesList, dirtyEdges ){
-		var newTri;
 		var plusOne = (edge+1)%3;
 		var plusTwo = (edge+2)%3;
-		newTri = new Triangle(this.points, splitPointIdx, plusOne, plusTwo);
+		var newTri = new Triangle(this.points, splitPointIdx, this.getIndex(plusOne), this.getIndex(plusTwo));
 		this.setIndex(plusOne, splitPointIdx);
+		this.invalidate();
+		
+//		This is handled below.  otherwise, it remains null		
+//		newTri.neighbors[edge] = this.neighbors[edge];
+		newTri.neighbors[1] = this.neighbors[plusOne];
+		newTri.neighbors[2] = this;
+		
+		this.neighbors[plusOne] = newTri;
+		var neighbor = this.neighbors[edge];
+		if( neighbor ){
+			debugger;
+			var neighborEdge = neighbor.getEdge(this);
+			var neighborPlusOne = (neighborEdge+1)%3;
+			var neighborPlusTwo = (neighborEdge+2)%3;
+			var anotherNewTri = new Triangle(this.points, splitPointIdx, neighbor.getIndex(neighborPlusOne), neighbor.getIndex(neighborPlusTwo));
+			neighbor.setIndex(neighborPlusOne, splitPointIdx);
+			neighbor.invalidate();
+			anotherNewTri.neighbors[neighborPlusOne] = neighbor.neighbors[neighborPlusOne];
+			anotherNewTri.neighbors[neighborPlusTwo] = neighbor;
+			
+			neighbor.neighbors[neighborPlusOne] = anotherNewTri;
+			
+			// Connect the two pairs of triangles to one another
+			this.neighbors[edge] = anotherNewTri;
+			newTri.neighbors[0] = neighbor;
+			neighbor.neighbors[neighborEdge] = newTri;
+			anotherNewTri.neighbors[0] = this;
+			
+			trianglesList.push( anotherNewTri );
+		}
 		
 		trianglesList.push( newTri );
 	},
@@ -188,6 +217,14 @@ Triangle.prototype = {
 		}
 		debugger;
 		alert("could not replaceNeighbor");
+	},
+	getEdge: function getEdge(tri){
+		for( var i = 0; i < 3; i++ ){
+			if( this.neighbors[i] === tri ){
+				return i;
+			}
+		}
+		return -1;
 	},
 	edgeDelaunay: function edgeDelaunay(edge){
 		var neighbor = this.neighbors[edge];

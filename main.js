@@ -35,12 +35,12 @@ function start() {
 	drawScene();
 }
 
-var theta = 0;
-var thetaVelocity = 0;
-var phi = 0;
+var theta = 0.6;
+var thetaVelocity = -0.01;
+var phi = 0.4;
 var phiVelocity = 0;
 var mouseDownX, mouseDownY, mouseDownTheta, mouseDownPhi, lastMouseTime;
-var inertialMovement = false;
+var inertialMovement = true;
 function onMouseDown(e){
 	inertialMovement = false;
 	
@@ -147,6 +147,8 @@ function getShader(gl, id) {
 var NUM_VERTS = 10;
 var NUM_TERRAIN_VERTS = 0;
 var NUM_TERRAIN_INDICES = 0;
+var SIDE_LENGTH = 80;
+var EDGE_VERTS = 20;
 
 var squareVerticesBuffer;
 var squareVerticesColorBuffer;
@@ -196,12 +198,35 @@ function initBuffers() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
 	
 	terrain = new Triangulation();
-	terrain.addPoint(-1, -1, Math.random()-0.5);
-	terrain.addPoint(1, -1, Math.random()-0.5);
-	terrain.addPoint(-1, 1, Math.random()-0.5);
-	terrain.addPoint(1, 1, Math.random()-0.5);
+	
+	terrain.addPoint(0, SIDE_LENGTH, 0);
+	terrain.addPoint(0, 0, 0);
+
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0, 0);
+		terrain.validate();
+	}
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( SIDE_LENGTH, SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0);
+		terrain.validate();
+	}
+	terrain.addPoint(SIDE_LENGTH, 0, 0);
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( SIDE_LENGTH - SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), SIDE_LENGTH, 0);
+		terrain.validate();
+	}
+	
+	terrain.addPoint(SIDE_LENGTH, SIDE_LENGTH, 0);
+	
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( 0, SIDE_LENGTH - SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0);
+		terrain.validate();
+	}
+	
+	// Interior Points
 	for( var i = 0; i < 2000; i++ ){
-		terrain.addPoint( 2*Math.random()-1, 2*Math.random()-1 );
+		terrain.addPoint( SIDE_LENGTH*Math.random(), SIDE_LENGTH*Math.random(), 0 );
+		terrain.validate();
 	}
 	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertices(), gl.STATIC_DRAW);
 	
@@ -269,14 +294,17 @@ function drawScene() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	// Update values for perspective and model-view matrices
-	var perspectiveMatrix = makePerspective(45, canvas.width/canvas.height, 0.1, 100.0);
-	var mvMatrix = Matrix.I(4).x(Matrix.Translation($V([0.0, 0.0, -3.0])).ensure4x4());
+	var perspectiveMatrix = makePerspective(45, canvas.width/canvas.height, 0.1, 1000);
+	var mvMatrix = Matrix.I(4).x(Matrix.Translation($V([0, 0, -SIDE_LENGTH])).ensure4x4());
 	
 	var phiRotationMatrix = Matrix.Rotation(phi, $V([1, 0, 0])).ensure4x4();
 	mvMatrix = mvMatrix.x(phiRotationMatrix);
 	
 	var thetaRotationMatrix = Matrix.Rotation(theta, $V([0, 1, 0])).ensure4x4();
 	mvMatrix = mvMatrix.x(thetaRotationMatrix);
+	
+	var centerMatrix = Matrix.Translation($V([-SIDE_LENGTH/2, 0, -SIDE_LENGTH/2]));
+	mvMatrix = mvMatrix.x(centerMatrix);
 	
 	var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
 	gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));

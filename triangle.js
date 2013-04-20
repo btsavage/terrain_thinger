@@ -157,8 +157,10 @@ Triangle.prototype = {
 			anotherNewTri.neighbors[0] = this;
 			
 			trianglesList.push( anotherNewTri );
+			dirtyEdges.push( [anotherNewTri, 0], [anotherNewTri, 1], [anotherNewTri, 2], [neighbor, neighborPlusTwo] );
 		}
 		trianglesList.push( newTri );
+		dirtyEdges.push( [newTri, 0], [newTri, 1], [newTri, 2], [this, plusTwo] );
 	},
 	split: function split(splitPointIdx, trianglesList, dirtyEdges){
 		var newTri1 = new Triangle(this.points, this.idx1, this.idx2, splitPointIdx);

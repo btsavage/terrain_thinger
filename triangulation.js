@@ -33,9 +33,10 @@ Triangulation.prototype = {
 					break;
 				}else if( 0 <= val && val <= 2 ){
 					var dirtyEdges = [];
+					console.log("ON THE EDGE!");
 					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
 					
-					this.ensureDelaunay([]);
+					this.ensureDelaunay(dirtyEdges);
 					this.validate();
 					return;
 				}
@@ -111,6 +112,7 @@ Triangulation.prototype = {
 			var edge = dirtyEdge[1];
 			if( !tri1.edgeDelaunay( edge ) ){
 				tri1.flip( edge, dirtyEdges );
+				console.log("flipped!");
 			}
 		}
 	},

@@ -30,11 +30,11 @@ function onResize(){
 }
 
 function onMouseDown(e){
-	console.log("down");
 }
 
 function onMouseUp(e){
 	triangulation.addPoint( e.clientX, e.clientY, 0, context );
+	triangulation.validate();
 	raf(drawScene);
 }
 

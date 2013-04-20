@@ -132,7 +132,6 @@ Triangle.prototype = {
 			newTri.neighbors[1].replaceNeighbor(this, newTri);
 		}
 		newTri.neighbors[2] = this;
-		
 		this.neighbors[plusOne] = newTri;
 		
 		var neighbor = this.neighbors[edge];
@@ -149,7 +148,6 @@ Triangle.prototype = {
 				anotherNewTri.neighbors[1].replaceNeighbor(neighbor, anotherNewTri);
 			}
 			anotherNewTri.neighbors[2] = neighbor;
-			
 			neighbor.neighbors[neighborPlusOne] = anotherNewTri;
 			
 			// Connect the two pairs of triangles to one another
@@ -159,13 +157,7 @@ Triangle.prototype = {
 			anotherNewTri.neighbors[0] = this;
 			
 			trianglesList.push( anotherNewTri );
-			
-			neighbor.validateNeighbors();
-			anotherNewTri.validateNeighbors();
 		}
-		
-		this.validateNeighbors();
-		newTri.validateNeighbors();
 		trianglesList.push( newTri );
 	},
 	split: function split(splitPointIdx, trianglesList, dirtyEdges){

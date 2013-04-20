@@ -32,7 +32,6 @@ Triangulation.prototype = {
 				if( val === 3 ){
 					break;
 				}else if( 0 <= val && val <= 2 ){
-					debugger;
 					var dirtyEdges = [];
 					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
 					
@@ -86,7 +85,6 @@ Triangulation.prototype = {
 			}
 			tri.split( this.points.length-1, this.triangles, dirtyEdges );
 			this.ensureDelaunay(dirtyEdges);
-			this.validate();
 		}
 	},
 	searchStartPoint: function searchStartPoint(x, y){

@@ -195,7 +195,6 @@ function initBuffers() {
 	terrainVerticesBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
 	
-	debugger;
 	terrain = new Triangulation();
 	terrain.addPoint(-1, -1, Math.random()-0.5);
 	terrain.addPoint(1, -1, Math.random()-0.5);

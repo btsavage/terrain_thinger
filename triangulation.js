@@ -37,7 +37,6 @@ Triangulation.prototype = {
 					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
 					
 					this.ensureDelaunay(dirtyEdges);
-					this.validate();
 					return;
 				}
 				
@@ -74,7 +73,6 @@ Triangulation.prototype = {
 					newTri.neighbors[0] = tri;
 					
 					this.ensureDelaunay([[tri, edge]]);
-					this.validate();
 					return;
 				}else{
 					tri = neighbor;

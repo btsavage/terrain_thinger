@@ -6,6 +6,13 @@ function Triangulation(){
 }
 
 Triangulation.prototype = {
+	validate: function validate(){
+		this.triangles.forEach( function(triangle){
+			for( var i = 0; i < 3; i++ ){
+				triangle.validateNeighbors();
+			}
+		});
+	},
 	addPoint: function addPoint( x, y, z, context ){
 		// TODO: check if it's THE SAME as a point
 		
@@ -30,6 +37,7 @@ Triangulation.prototype = {
 					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
 					
 					this.ensureDelaunay([]);
+					this.validate();
 					return;
 				}
 				
@@ -66,6 +74,7 @@ Triangulation.prototype = {
 					newTri.neighbors[0] = tri;
 					
 					this.ensureDelaunay([[tri, edge]]);
+					this.validate();
 					return;
 				}else{
 					tri = neighbor;
@@ -77,6 +86,7 @@ Triangulation.prototype = {
 			}
 			tri.split( this.points.length-1, this.triangles, dirtyEdges );
 			this.ensureDelaunay(dirtyEdges);
+			this.validate();
 		}
 	},
 	searchStartPoint: function searchStartPoint(x, y){

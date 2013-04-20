@@ -127,23 +127,28 @@ Triangle.prototype = {
 		this.setIndex(plusOne, splitPointIdx);
 		this.invalidate();
 		
-//		This is handled below.  otherwise, it remains null		
-//		newTri.neighbors[edge] = this.neighbors[edge];
 		newTri.neighbors[1] = this.neighbors[plusOne];
+		if( newTri.neighbors[1] ){
+			newTri.neighbors[1].replaceNeighbor(this, newTri);
+		}
 		newTri.neighbors[2] = this;
 		
 		this.neighbors[plusOne] = newTri;
+		
 		var neighbor = this.neighbors[edge];
 		if( neighbor ){
-			debugger;
 			var neighborEdge = neighbor.getEdge(this);
 			var neighborPlusOne = (neighborEdge+1)%3;
 			var neighborPlusTwo = (neighborEdge+2)%3;
 			var anotherNewTri = new Triangle(this.points, splitPointIdx, neighbor.getIndex(neighborPlusOne), neighbor.getIndex(neighborPlusTwo));
 			neighbor.setIndex(neighborPlusOne, splitPointIdx);
 			neighbor.invalidate();
-			anotherNewTri.neighbors[neighborPlusOne] = neighbor.neighbors[neighborPlusOne];
-			anotherNewTri.neighbors[neighborPlusTwo] = neighbor;
+			
+			anotherNewTri.neighbors[1] = neighbor.neighbors[neighborPlusOne];
+			if( anotherNewTri.neighbors[1] ){
+				anotherNewTri.neighbors[1].replaceNeighbor(neighbor, anotherNewTri);
+			}
+			anotherNewTri.neighbors[2] = neighbor;
 			
 			neighbor.neighbors[neighborPlusOne] = anotherNewTri;
 			
@@ -154,8 +159,13 @@ Triangle.prototype = {
 			anotherNewTri.neighbors[0] = this;
 			
 			trianglesList.push( anotherNewTri );
+			
+			neighbor.validateNeighbors();
+			anotherNewTri.validateNeighbors();
 		}
 		
+		this.validateNeighbors();
+		newTri.validateNeighbors();
 		trianglesList.push( newTri );
 	},
 	split: function split(splitPointIdx, trianglesList, dirtyEdges){

@@ -1,4 +1,4 @@
-var EPSILON = 0.01;
+var EPSILON = 0.001;
 
 function Triangle(points, idx1, idx2, idx3){
 	this.points = points;
@@ -267,7 +267,7 @@ Triangle.prototype = {
 		}
 		
 		var angle1 = this.angleToEdge(edge);
-		return (angle1 + angle2) < Math.PI;
+		return (angle1 + angle2) <= Math.PI;
 	},
 	angleToEdge: function angleToEdge(edge){
 		var a, b, c;

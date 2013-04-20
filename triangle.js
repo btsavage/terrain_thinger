@@ -319,9 +319,7 @@ Triangle.prototype = {
 			}
 		}
 		// Make all 4 newly changed edges marked as dirty
-		dirtyEdges.push( [this, edge], [this, edge_plus_2], [neighbor, otherEdge], [neighbor, otherEdge_plus_2] );
-		
-		this.validateNeighbors();
+		dirtyEdges.push( [this, edge], [this, edge_plus_2], [neighbor, otherEdge], [neighbor, otherEdge_plus_2] );		
 	},
 	invalidate: function invalidate(){
 		this.matrix = null;

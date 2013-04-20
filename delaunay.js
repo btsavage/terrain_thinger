@@ -59,6 +59,10 @@ function drawScene(){
 		context.stroke();
 	});
 	
+	triangulation.triangles.forEach( function(triangle){
+		triangle.drawCircumscribedCircle(context);
+	});
+	
 	context.fillStyle = "rgb(0, 0, 0)";
 	
 	triangulation.points.forEach( function(point){

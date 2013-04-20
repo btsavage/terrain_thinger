@@ -62,6 +62,29 @@ Triangle.prototype = {
 		}
 		return this.centroid;
 	},
+	drawCircumscribedCircle: function drawCircumscribedCircle(context){
+		var pt1 = this.points[this.idx1];
+		var pt2 = this.points[this.idx2];
+		var pt3 = this.points[this.idx3];
+		var midpoint1 = $V([pt1.x + (pt2.x - pt1.x)/2, pt1.y + (pt2.y - pt1.y)/2]);
+		var midpoint2 = $V([pt1.x + (pt3.x - pt1.x)/2, pt1.y + (pt3.y - pt1.y)/2]);
+		var perp1 = $V([pt2.y - pt1.y, -(pt2.x - pt1.x)]);
+		var perp2 = $V([pt3.y - pt1.y, -(pt3.x - pt1.x)]);
+		
+		var solution = $M([
+			[-perp1.elements[0] , perp2.elements[0] ],
+			[-perp1.elements[1] , perp2.elements[1] ]
+		]).inv().x( midpoint1.subtract(midpoint2) );
+		var circumCenter = midpoint1.add( perp1.multiply(solution.elements[0]) );
+		var circumCenter2 = midpoint2.add( perp2.multiply(solution.elements[1]) );
+		
+		var radius = circumCenter.distanceFrom( $V([pt1.x, pt1.y]) );
+		
+		context.strokeStyle = "rgb(" + Math.floor(Math.random()*256) + "," + Math.floor(Math.random()*256) + "," + Math.floor(Math.random()*256) + ")";
+		context.beginPath();
+		context.arc(circumCenter.elements[0], circumCenter.elements[1], radius, 0, 2*Math.PI);
+		context.stroke();
+	},
 	edgeCrossed: function edgeCrossed(x, y, context){
 		if( !this.centroid || !this.cv1 || !this.cv2 || !this.cv3 ){
 			this.centroid = {

@@ -1,3 +1,5 @@
+var EPSILON = 0.01;
+
 function Triangle(points, idx1, idx2, idx3){
 	this.points = points;
 	this.idx1 = idx1;
@@ -16,6 +18,13 @@ function Triangle(points, idx1, idx2, idx3){
 }
 
 Triangle.prototype = {
+	/**
+	 * 0 : on edge 1
+	 * 1 : on edge 2
+	 * 2 : on edge 3
+	 * 3 : inside
+	 * 4 : not contained
+	 */
 	contains: function contains(x, y){
 		var p1 = this.points[this.idx1];
 		if( !this.matrix ){
@@ -25,9 +34,24 @@ Triangle.prototype = {
 				[p2.x - p1.x, p3.x - p1.x],
 				[p2.y - p1.y, p3.y - p1.y]
 			]).inv();
+			// If the matrix in non-invertible this will result in null...
+			// TODO: handle this case gracefully
 		}
 		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) ).elements;
-		return (result[0] >= 0) && (result[1] >= 0) && (result[0] <= 1 ) && (result[1] <= 1 ) && (result[0] + result[1] <= 1);
+		var u = result[0];
+		var v = result[1];
+		if( Math.abs(u) < EPSILON && 0 <= v && v <= 1 ){
+			return 2;
+		}else if( Math.abs(v) < EPSILON && 0 <= u && u <= 1 ){
+			return 0;
+		}else if( Math.abs( u + v - 1 ) < EPSILON && u > 0 && v > 0 ){
+			return 1;
+		}
+		if( (u >= 0) && (v >= 0) && (u <= 1 ) && (v <= 1 ) && (u + v <= 1) ){
+			return 3;
+		}else{
+			return 4;
+		}
 	},
 	getCentroid: function getCentroid(){
 		if( !this.centroid ){
@@ -95,6 +119,21 @@ Triangle.prototype = {
 			}
 			return 2;
 		}
+	},
+	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, x, y, trianglesList, dirtyEdges ){
+		debugger;
+		var newTri;
+		if( edge === 0 ){
+			newTri = new Triangle(this.points, splitPointIdx, this.idx2, this.idx3);
+			this.idx2 = splitPointIdx;
+		}else if( edge === 1 ){
+			newTri = new Triangle(this.points, splitPointIdx, this.idx3, this.idx1);
+			this.idx3 = splitPointIdx;
+		}else if( edge === 2 ){
+			newTri = new Triangle(this.points, splitPointIdx, this.idx1, this.idx2);
+			this.idx1 = splitPointIdx;
+		}
+		trianglesList.push( newTri );
 	},
 	split: function split(splitPointIdx, trianglesList, dirtyEdges){
 		var newTri1 = new Triangle(this.points, this.idx1, this.idx2, splitPointIdx);

@@ -7,6 +7,8 @@ function Triangulation(){
 
 Triangulation.prototype = {
 	addPoint: function addPoint( x, y, z, context ){
+		// TODO: check if it's THE SAME as a point
+		
 		var pt = {x:x, y:y, z:z};
 		var generateZValue = (typeof(z) === "undefined");
 
@@ -17,7 +19,27 @@ Triangulation.prototype = {
 			this.triangles.push( new Triangle(this.points, 0, 1, 2) );
 		}else{
 			var tri = this.searchStartPoint(x, y);
-			while( !tri.contains(x, y) ){
+			while( true ){
+				
+				var val = tri.contains(x, y);
+				if( val === 3 ){
+					break;
+				}else if( 0 <= val && val <= 2 ){
+					debugger;
+					var dirtyEdges = [];
+					tri.splitEdgeAt( this.points.length-1, val, x, y, this.triangles, dirtyEdges );
+					
+					this.ensureDelaunay([]);
+					return;
+				}
+				
+				/**
+				 * 0 : on edge 1
+				 * 1 : on edge 2
+				 * 2 : on edge 3
+				 * 3 : inside
+				 * 4 : not contained
+				 */
 				var edge = tri.edgeCrossed(x, y, context);
 				var neighbor = tri.neighbors[ edge ];
 				if( !neighbor ){

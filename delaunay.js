@@ -48,6 +48,7 @@ function drawScene(){
 	context.strokeStyle = "rgb(255, 0, 0)";
 	
 	triangulation.triangles.forEach( function(triangle){
+		debugger;
 		context.beginPath();
 		var pt1 = triangulation.points[triangle.idx1];
 		context.moveTo( pt1.x, pt1.y );

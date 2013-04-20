@@ -120,19 +120,13 @@ Triangle.prototype = {
 			return 2;
 		}
 	},
-	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, x, y, trianglesList, dirtyEdges ){
-		debugger;
+	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, trianglesList, dirtyEdges ){
 		var newTri;
-		if( edge === 0 ){
-			newTri = new Triangle(this.points, splitPointIdx, this.idx2, this.idx3);
-			this.idx2 = splitPointIdx;
-		}else if( edge === 1 ){
-			newTri = new Triangle(this.points, splitPointIdx, this.idx3, this.idx1);
-			this.idx3 = splitPointIdx;
-		}else if( edge === 2 ){
-			newTri = new Triangle(this.points, splitPointIdx, this.idx1, this.idx2);
-			this.idx1 = splitPointIdx;
-		}
+		var plusOne = (edge+1)%3;
+		var plusTwo = (edge+2)%3;
+		newTri = new Triangle(this.points, splitPointIdx, plusOne, plusTwo);
+		this.setIndex(plusOne, splitPointIdx);
+		
 		trianglesList.push( newTri );
 	},
 	split: function split(splitPointIdx, trianglesList, dirtyEdges){

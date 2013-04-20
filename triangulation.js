@@ -27,7 +27,7 @@ Triangulation.prototype = {
 				}else if( 0 <= val && val <= 2 ){
 					debugger;
 					var dirtyEdges = [];
-					tri.splitEdgeAt( this.points.length-1, val, x, y, this.triangles, dirtyEdges );
+					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
 					
 					this.ensureDelaunay([]);
 					return;

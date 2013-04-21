@@ -213,7 +213,7 @@ Triangle.prototype = {
 		trianglesList.push( newTri1, newTri2 );
 		dirtyEdges.push( [newTri1, 0], [newTri1, 2], [newTri2, 0], [newTri2, 1], [this, 1], [this, 2] );
 	},
-	interpolate: function interpolate(x, y, k){
+	interpolate: function interpolate(x, y, k, r){
 		var p1 = this.points[this.idx1];
 		var p2 = this.points[this.idx2];
 		var p3 = this.points[this.idx3];
@@ -233,7 +233,7 @@ Triangle.prototype = {
 		
 		var minDistance = Math.min( d1, d2, d3 );
 		
-		return p1.z + result.dot( $V([p2.z - p1.z, p3.z - p1.z]) ) + minDistance*k*(2*Math.random()-1);
+		return p1.z + result.dot( $V([p2.z - p1.z, p3.z - p1.z]) ) + minDistance*k*(2*r-1);
 	},
 	replaceNeighbor: function replaceNeighbor(oldTri, newTri){
 		for( var i = 0; i < 3; i++ ){

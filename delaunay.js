@@ -16,6 +16,30 @@ function start() {
 	
 	window.onresize = onResize;
 	
+	var terrain = triangulation;
+	var SIDE_LENGTH = 500;
+	var EDGE_VERTS = 20;
+	
+	terrain.addPoint(0, SIDE_LENGTH, 0);
+	terrain.addPoint(0, 0, 0);
+
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0, 0);
+	}
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( SIDE_LENGTH, SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0);
+	}
+	terrain.addPoint(SIDE_LENGTH, 0, 0);
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( SIDE_LENGTH - SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), SIDE_LENGTH, 0);
+	}
+	
+	terrain.addPoint(SIDE_LENGTH, SIDE_LENGTH, 0);
+	
+	for( var i = 0; i < EDGE_VERTS; i++ ){
+		terrain.addPoint( 0, SIDE_LENGTH - SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0);
+	}
+	
 	drawScene();
 }
 

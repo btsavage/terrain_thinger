@@ -1,8 +1,9 @@
 K = 1;
 
-function Triangulation(){
+function Triangulation(mersenneTwister){
 	this.points = [];
 	this.triangles = [];
+	this.mersenneTwister = mersenneTwister;
 }
 
 Triangulation.prototype = {
@@ -33,7 +34,10 @@ Triangulation.prototype = {
 					break;
 				}else if( 0 <= val && val <= 2 ){
 					var dirtyEdges = [];
-					console.log("ON THE EDGE!");
+					if( generateZValue ){
+						var r = this.mersenneTwister.random();
+						pt.z = tri.interpolate( x, y, K, r );
+					}
 					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
 					
 					this.ensureDelaunay(dirtyEdges);
@@ -80,7 +84,8 @@ Triangulation.prototype = {
 			}
 			var dirtyEdges = [];
 			if( generateZValue ){
-				pt.z = tri.interpolate( x, y, K );
+				var r = this.mersenneTwister.random();
+				pt.z = tri.interpolate( x, y, K, r );
 			}
 			tri.split( this.points.length-1, this.triangles, dirtyEdges );
 			this.ensureDelaunay(dirtyEdges);
@@ -110,7 +115,6 @@ Triangulation.prototype = {
 			var edge = dirtyEdge[1];
 			if( !tri1.edgeDelaunay( edge ) ){
 				tri1.flip( edge, dirtyEdges );
-				console.log("flipped!");
 			}
 		}
 	},
@@ -128,9 +132,9 @@ Triangulation.prototype = {
 	exportVertexColors: function exportVertexColors(){
 		var vertexColors = [];
 		for( var i = 0; i < this.points.length; i++ ){
-			vertexColors[4*i] = Math.random();
-			vertexColors[4*i+1] = Math.random();
-			vertexColors[4*i+2] = Math.random();
+			vertexColors[4*i] = this.mersenneTwister.random();
+			vertexColors[4*i+1] = this.mersenneTwister.random();
+			vertexColors[4*i+2] = this.mersenneTwister.random();
 			vertexColors[4*i+3] = 1;
 		}
 		return new Float32Array(vertexColors);

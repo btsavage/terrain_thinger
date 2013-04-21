@@ -40,7 +40,7 @@ var thetaVelocity = -0.01;
 var phi = 0.4;
 var phiVelocity = 0;
 var mouseDownX, mouseDownY, mouseDownTheta, mouseDownPhi, lastMouseTime;
-var inertialMovement = true;
+var inertialMovement = false;
 function onMouseDown(e){
 	inertialMovement = false;
 	
@@ -144,112 +144,113 @@ function getShader(gl, id) {
 
 	return shader;
 }
-var NUM_VERTS = 10;
-var NUM_TERRAIN_VERTS = 0;
-var NUM_TERRAIN_INDICES = 0;
-var SIDE_LENGTH = 80;
-var EDGE_VERTS = 20;
 
-var squareVerticesBuffer;
-var squareVerticesColorBuffer;
-
+/*
 var terrainVerticesBuffer;
 var terrainVerticesColorBuffer;
 var terrainIndexBuffer;
 var terrain;
+*/
+
+var chunks = [];
+
+var NUM_X_TILES = 5;
+var NUM_Y_TILES = 5;
+
 function initBuffers() {
-	squareVerticesBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-
-	var vertices = [
-		1.0,  1.0,  -1.0,
-		-1.0, 1.0,  -1.0,
-		1.0,  -1.0, -1.0,
-		-1.0, -1.0, -1.0,
-		1.0, -1.0, 1.0,
-		-1.0, -1.0, 1.0,
-		1.0,  1.0, 1.0,
-		-1.0, 1.0, 1.0,
-		1.0,  1.0,  -1.0,
-		-1.0, 1.0,  -1.0,
-	];
-
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-	
-	var colors = [
-		1.0,  1.0,  1.0,  1.0,    // white
-		1.0,  0.0,  0.0,  1.0,    // red
-		0.0,  1.0,  0.0,  1.0,    // green
-		0.0,  0.0,  1.0,  1.0,     // blue
-		1.0,  1.0,  0.0,  1.0,		// yellow
-		1.0,  0.0,  1.0,  1.0,		// magenta
-		0.0,  1.0,  1.0,  1.0,		// cyan
-		1.0,  1.0,  0.0,  1.0,      // green?
-		1.0,  1.0,  1.0,  1.0,
-		1.0,  0.0,  0.0,  1.0,    // red
-	];
-
-	squareVerticesColorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-	
+	var mersenneTwister = new MersenneTwister();
+		
 	// Terrain
-	terrainVerticesBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
-	
-	terrain = new Triangulation();
-	
-	terrain.addPoint(0, SIDE_LENGTH, 0);
-	terrain.addPoint(0, 0, 0);
+	for( var x = 0; x < NUM_X_TILES; x++ ){
+		chunks[x] = [];
+		for( var y = 0; y < NUM_Y_TILES; y++ ){
+			var terrain = new Triangulation(mersenneTwister);
+			chunks[x][y] = {
+				'terrain': terrain,
+				'vertexBuffer': gl.createBuffer(),
+				'vertexColorBuffer': gl.createBuffer(),
+				'indexBuffer': gl.createBuffer(),
+				'vertexCount': 0,
+				'indexCount': 0
+			};
+			generateTile( mersenneTwister, terrain, x, y );
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, chunks[x][y].vertexBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertices(), gl.STATIC_DRAW);
+			chunks[x][y].vertexCount = terrain.points.length;
+			
+			// Terrain Color
+			gl.bindBuffer(gl.ARRAY_BUFFER, chunks[x][y].vertexColorBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertexColors(), gl.STATIC_DRAW);
 
-	for( var i = 0; i < EDGE_VERTS; i++ ){
-		terrain.addPoint( SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0, 0);
-		terrain.validate();
+			// Indices
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunks[x][y].indexBuffer);
+			var indices = terrain.exportIndexBuffer();
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+			chunks[x][y].indexCount = indices.length;
+		}
 	}
-	for( var i = 0; i < EDGE_VERTS; i++ ){
-		terrain.addPoint( SIDE_LENGTH, SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0);
-		terrain.validate();
-	}
-	terrain.addPoint(SIDE_LENGTH, 0, 0);
-	for( var i = 0; i < EDGE_VERTS; i++ ){
-		terrain.addPoint( SIDE_LENGTH - SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), SIDE_LENGTH, 0);
-		terrain.validate();
-	}
-	
-	terrain.addPoint(SIDE_LENGTH, SIDE_LENGTH, 0);
-	
-	for( var i = 0; i < EDGE_VERTS; i++ ){
-		terrain.addPoint( 0, SIDE_LENGTH - SIDE_LENGTH*(i+1)/(EDGE_VERTS+1), 0);
-		terrain.validate();
-	}
-	
-	// Interior Points
-	for( var i = 0; i < 2000; i++ ){
-		terrain.addPoint( SIDE_LENGTH*Math.random(), SIDE_LENGTH*Math.random(), 0 );
-		terrain.validate();
-	}
-	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertices(), gl.STATIC_DRAW);
-	
-	// Terrain Color
-	terrainVerticesColorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesColorBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertexColors(), gl.STATIC_DRAW);
-	
-	NUM_TERRAIN_VERTS = terrain.points.length;
-	
-	// Indices
-	terrainIndexBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, terrainIndexBuffer);
-	var indices = terrain.exportIndexBuffer();
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-	NUM_TERRAIN_INDICES = indices.length;
 }
 
-function addPoint(){
-	terrain.addPoint( 2*Math.random()-1, 2*Math.random()-1 );
+var HORIZONTAL = 0;
+var VERTICAL = 1;
+function getSeedForEdge(tileX, tileY, dir){
+	switch(dir){
+	case 0:
+		return (1 << 31) ^ ((tileX & 0xFFFF) | (tileY << 16));
+	case 1:
+		return (tileX & 0xFFFF) | ((0x7FFF & tileY) << 16);
+	default:
+		throw new Error("unknown direction");
+	}
+}
+function getSeedForCorner(tileX, tileY){
+	return ((tileY & 0xFFFF) | (tileX << 16));
+}
+function getSeedForInterior(tileX, tileY){ return ( (tileX << 3) ^ (tileX >>> 3) ) ^ ( (tileY << 5 ) ^ (tileY >>> 5 ) ); }
+
+function generateEdge(mersenneTwister, terrain, tileX, tileY, dir, offset){
+	mersenneTwister.init_genrand( getSeedForEdge(tileX, tileY, dir) );
 	
-	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, terrain.exportVertices(), gl.STATIC_DRAW);
+	for( var i = 0; i < 6; i++ ){
+		var numSegments = Math.pow(2, i);
+		for( var j = 0; j < numSegments; j++ ){
+			var temp = (j + (j+1))/(2*numSegments);
+			if( dir === HORIZONTAL ){
+				terrain.addPoint( temp, offset );
+			}else if( dir === VERTICAL ){
+				terrain.addPoint( offset, temp );
+			}
+		}
+	}
+}
+
+function generateTile(mersenneTwister, terrain, tileX, tileY){
+	var seed1 = getSeedForCorner(tileX, tileY);
+	mersenneTwister.init_genrand( seed1 );
+	terrain.addPoint(0, 0, 0.1*(mersenneTwister.random() - 0.5));
+	
+	var seed2 = getSeedForCorner(tileX+1, tileY);
+	mersenneTwister.init_genrand( seed2 );
+	terrain.addPoint(1, 0, 0.1*(mersenneTwister.random() - 0.5));
+
+	mersenneTwister.init_genrand( getSeedForCorner(tileX+1, tileY+1) );
+	terrain.addPoint(1, 1, 0.1*(mersenneTwister.random() - 0.5));
+	
+	mersenneTwister.init_genrand( getSeedForCorner(tileX, tileY+1) );
+	terrain.addPoint(0, 1, 0.1*(mersenneTwister.random() - 0.5));
+
+	generateEdge(mersenneTwister, terrain, tileX, tileY, HORIZONTAL, 0);
+	generateEdge(mersenneTwister, terrain, tileX, tileY, VERTICAL, 0);
+	generateEdge(mersenneTwister, terrain, tileX, tileY+1, HORIZONTAL, 1);
+	generateEdge(mersenneTwister, terrain, tileX+1, tileY, VERTICAL, 1);
+
+	// Interior Points
+	mersenneTwister.init_genrand( getSeedForInterior(tileX, tileY) );
+	for( var i = 0; i < 2000; i++ ){
+		terrain.addPoint( mersenneTwister.random(), mersenneTwister.random() );
+	}
+	
 }
 
 var THETA_FRICTION = 0.005;
@@ -295,39 +296,36 @@ function drawScene() {
 	
 	// Update values for perspective and model-view matrices
 	var perspectiveMatrix = makePerspective(45, canvas.width/canvas.height, 0.1, 1000);
-	var mvMatrix = Matrix.I(4).x(Matrix.Translation($V([0, 0, -SIDE_LENGTH])).ensure4x4());
-	
-	var phiRotationMatrix = Matrix.Rotation(phi, $V([1, 0, 0])).ensure4x4();
-	mvMatrix = mvMatrix.x(phiRotationMatrix);
-	
-	var thetaRotationMatrix = Matrix.Rotation(theta, $V([0, 1, 0])).ensure4x4();
-	mvMatrix = mvMatrix.x(thetaRotationMatrix);
-	
-	var centerMatrix = Matrix.Translation($V([-SIDE_LENGTH/2, 0, -SIDE_LENGTH/2]));
-	mvMatrix = mvMatrix.x(centerMatrix);
-	
 	var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
 	gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
-	var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-	gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 	
-	// Bind model data
-/*
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
-	gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+	var phiRotationMatrix = Matrix.Rotation(phi, $V([1, 0, 0])).ensure4x4();
+	var thetaRotationMatrix = Matrix.Rotation(theta, $V([0, 1, 0])).ensure4x4();
+	var baseMvMatrix = Matrix.I(4).x(Matrix.Translation($V([0, 0, -NUM_X_TILES])).ensure4x4()).x(phiRotationMatrix).x(thetaRotationMatrix);
 	
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, NUM_VERTS);
-*/
-	
-	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesBuffer);
-	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-	gl.bindBuffer(gl.ARRAY_BUFFER, terrainVerticesColorBuffer);
-	gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, terrainIndexBuffer);
-	gl.drawElements(gl.TRIANGLES, NUM_TERRAIN_INDICES, gl.UNSIGNED_SHORT, 0);
+	
+	for( var x = 0; x < NUM_X_TILES; x++ ){
+		for( var y = 0; y < NUM_Y_TILES; y++ ){
+			var centerMatrix = Matrix.Translation($V([x-NUM_X_TILES/2, 0, y-NUM_Y_TILES/2]));
+			
+			var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+			gl.uniformMatrix4fv(
+				mvUniform, 
+				false, 
+				new Float32Array(baseMvMatrix.x(centerMatrix).flatten())
+			);
+			
+			var chunk = chunks[x][y];
+			gl.bindBuffer(gl.ARRAY_BUFFER, chunk.vertexBuffer);
+			gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, chunk.vertexColorBuffer);
+			gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk.indexBuffer);
+			gl.drawElements(gl.TRIANGLES, chunk.indexCount, gl.UNSIGNED_SHORT, 0);
+		}
+	}
 
 	raf(drawScene);
 }

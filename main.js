@@ -11,6 +11,7 @@ function start() {
 	
 	canvas.addEventListener( "mousedown", onMouseDown );
 	canvas.addEventListener( "mouseup", onMouseUp );
+	canvas.addEventListener( "mousewheel", onMouseWheel );
 
 	try {
 		gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
@@ -39,6 +40,7 @@ var theta = 0.6;
 var thetaVelocity = -0.01;
 var phi = 0.4;
 var phiVelocity = 0;
+var rho = 1;
 var mouseDownX, mouseDownY, mouseDownTheta, mouseDownPhi, lastMouseTime;
 var inertialMovement = false;
 function onMouseDown(e){
@@ -72,6 +74,11 @@ function onMouseMove(e){
 	lastMouseTime = curTime;
 	theta = newTheta;
 	phi = newPhi;
+}
+
+function onMouseWheel(e){
+	console.log( rho );
+	rho = Math.max(1, rho + e.wheelDelta/1000);
 }
 
 function onResize(){
@@ -154,8 +161,8 @@ var terrain;
 
 var chunks = [];
 
-var NUM_X_TILES = 5;
-var NUM_Y_TILES = 5;
+var NUM_X_TILES = 1;
+var NUM_Y_TILES = 1;
 
 function initBuffers() {
 	var mersenneTwister = new MersenneTwister();
@@ -226,12 +233,10 @@ function generateEdge(mersenneTwister, terrain, tileX, tileY, dir, offset){
 }
 
 function generateTile(mersenneTwister, terrain, tileX, tileY){
-	var seed1 = getSeedForCorner(tileX, tileY);
-	mersenneTwister.init_genrand( seed1 );
+	mersenneTwister.init_genrand( getSeedForCorner(tileX, tileY) );
 	terrain.addPoint(0, 0, 0.1*(mersenneTwister.random() - 0.5));
 	
-	var seed2 = getSeedForCorner(tileX+1, tileY);
-	mersenneTwister.init_genrand( seed2 );
+	mersenneTwister.init_genrand( getSeedForCorner(tileX+1, tileY) );
 	terrain.addPoint(1, 0, 0.1*(mersenneTwister.random() - 0.5));
 
 	mersenneTwister.init_genrand( getSeedForCorner(tileX+1, tileY+1) );
@@ -240,11 +245,12 @@ function generateTile(mersenneTwister, terrain, tileX, tileY){
 	mersenneTwister.init_genrand( getSeedForCorner(tileX, tileY+1) );
 	terrain.addPoint(0, 1, 0.1*(mersenneTwister.random() - 0.5));
 
+/*
 	generateEdge(mersenneTwister, terrain, tileX, tileY, HORIZONTAL, 0);
 	generateEdge(mersenneTwister, terrain, tileX, tileY, VERTICAL, 0);
 	generateEdge(mersenneTwister, terrain, tileX, tileY+1, HORIZONTAL, 1);
 	generateEdge(mersenneTwister, terrain, tileX+1, tileY, VERTICAL, 1);
-
+*/
 	// Interior Points
 	mersenneTwister.init_genrand( getSeedForInterior(tileX, tileY) );
 	for( var i = 0; i < 2000; i++ ){
@@ -301,7 +307,7 @@ function drawScene() {
 	
 	var phiRotationMatrix = Matrix.Rotation(phi, $V([1, 0, 0])).ensure4x4();
 	var thetaRotationMatrix = Matrix.Rotation(theta, $V([0, 1, 0])).ensure4x4();
-	var baseMvMatrix = Matrix.I(4).x(Matrix.Translation($V([0, 0, -NUM_X_TILES])).ensure4x4()).x(phiRotationMatrix).x(thetaRotationMatrix);
+	var baseMvMatrix = Matrix.I(4).x(Matrix.Translation($V([0, 0, -rho])).ensure4x4()).x(phiRotationMatrix).x(thetaRotationMatrix);
 	
 
 	

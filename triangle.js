@@ -231,9 +231,9 @@ Triangle.prototype = {
 		var d2 = Math.sqrt( (p2.x - x)*(p2.x - x) + (p2.y - y)*(p2.y - y) );
 		var d3 = Math.sqrt( (p3.x - x)*(p3.x - x) + (p3.y - y)*(p3.y - y) );
 		
-		var minDistance = Math.min( d1, d2, d3 );
-		
-		return p1.z + result.dot( $V([p2.z - p1.z, p3.z - p1.z]) ) + minDistance*k*(2*r-1);
+		var avgDistance = (d1 + d2 + d3)/3;
+		var scaledDistance = (Math.sqrt(avgDistance+0.25) - 0.5);
+		return p1.z + result.dot( $V([p2.z - p1.z, p3.z - p1.z]) ) + 0.2*(scaledDistance)*k*(2*r-1);
 	},
 	replaceNeighbor: function replaceNeighbor(oldTri, newTri){
 		for( var i = 0; i < 3; i++ ){

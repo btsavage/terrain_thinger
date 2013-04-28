@@ -4,6 +4,7 @@ function Triangulation(mersenneTwister){
 	this.points = [];
 	this.triangles = [];
 	this.mersenneTwister = mersenneTwister;
+	this.kdTree = null;
 }
 
 Triangulation.prototype = {
@@ -27,8 +28,9 @@ Triangulation.prototype = {
 			this.triangles.push( new Triangle(this.points, 0, 1, 2) );
 		}else{
 			var tri = this.searchStartPoint(x, y);
+			var guesses = 0;
 			while( true ){
-				
+				guesses += 1;
 				var val = tri.contains(x, y);
 				if( val === 3 ){
 					break;
@@ -38,9 +40,10 @@ Triangulation.prototype = {
 						var r = this.mersenneTwister.random();
 						pt.z = tri.interpolate( x, y, K, r );
 					}
-					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges );
+					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges, this.kdTree );
 					
 					this.ensureDelaunay(dirtyEdges);
+					console.log( "edge: ", guesses );
 					return;
 				}
 				
@@ -73,10 +76,14 @@ Triangulation.prototype = {
 					
 					var newTri = new Triangle(this.points, p2, p1, this.points.length-1);
 					this.triangles.push( newTri );
+					if( this.kdTree ){
+						this.kdTree.insert( newTri.getCentroid() );
+					}
 					tri.neighbors[edge] = newTri;
 					newTri.neighbors[0] = tri;
 					
 					this.ensureDelaunay([[tri, edge]]);
+					console.log("outside: ", guesses);
 					return;
 				}else{
 					tri = neighbor;
@@ -87,11 +94,31 @@ Triangulation.prototype = {
 				var r = this.mersenneTwister.random();
 				pt.z = tri.interpolate( x, y, K, r );
 			}
-			tri.split( this.points.length-1, this.triangles, dirtyEdges );
+			tri.split( this.points.length-1, this.triangles, dirtyEdges, this.kdTree );
 			this.ensureDelaunay(dirtyEdges);
+			console.log("inside: ", guesses);
 		}
 	},
+	distance: function distance(a, b){
+	  return (a.x - b.x)*(a.x - b.x) +  (a.y - b.y)*(a.y - b.y);
+	},
 	searchStartPoint: function searchStartPoint(x, y){
+		if( this.triangles.length < 100 ){
+			return this.bruteForceClosestCentroid(x, y);
+		}
+		
+		if( !this.kdTree ){
+			this.kdTree = new kdTree( 
+				this.triangles.map( function(tri){return tri.getCentroid();}), 
+				this.distance, 
+				["x", "y"]
+			);
+		}
+		var nearest = this.kdTree.nearest({x:x, y:y}, 1);
+
+		return nearest[0][0].tri;
+	},
+	bruteForceClosestCentroid: function bruteForceClosestCentroid(x, y){
 		var closestTriangle = null;
 		var smallestSquaredDistance = Number.POSITIVE_INFINITY;
 		for( var i = 0; i < this.triangles.length; i++ ){

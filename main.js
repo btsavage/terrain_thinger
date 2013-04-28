@@ -236,29 +236,30 @@ var GRID = 1;
 function generateTile(mersenneTwister, terrain, tileX, tileY){
 	
 	mersenneTwister.init_genrand( getSeedForCorner(tileX, tileY) );
-	terrain.addPoint(-0.1, -0.1, 0);
+	terrain.addPoint(0.0, 0.0, 0);
 	
 	mersenneTwister.init_genrand( getSeedForCorner(tileX+1, tileY) );
-	terrain.addPoint(1.1, -0.1, 0);
+	terrain.addPoint(1.0, 0.0, 0);
 
 	mersenneTwister.init_genrand( getSeedForCorner(tileX+1, tileY+1) );
-	terrain.addPoint(1.1, 1.1, 0);
+	terrain.addPoint(1.0, 1.0, 0);
 	
 	mersenneTwister.init_genrand( getSeedForCorner(tileX, tileY+1) );
-	terrain.addPoint(-0.1, 1.1, 0);
+	terrain.addPoint(0.0, 1.0, 0);
 	
-	
+	/*
 	for( var x = 0; x <= GRID; x++ ){
 		for( var y = 0; y <= GRID; y++ ){
 			mersenneTwister.init_genrand( getSeedForCorner(x, y) );
 			terrain.addPoint(x/GRID, y/GRID, 0);
 		}
 	}
+	*/
 	
 	for( var x = 0; x < GRID; x++ ){
 		for( var y = 0; y < GRID; y++ ){
 			mersenneTwister.init_genrand( getSeedForCorner(x, y) );
-			for( var i = 0; i < 20000; i++ ){
+			for( var i = 0; i < 10000; i++ ){
 				terrain.addPoint((x+mersenneTwister.random())/GRID, (y+mersenneTwister.random())/GRID);
 			}
 		}

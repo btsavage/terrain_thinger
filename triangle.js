@@ -30,10 +30,15 @@ Triangle.prototype = {
 		if( !this.matrix ){
 			var p2 = this.points[this.idx2];
 			var p3 = this.points[this.idx3];
+			var a = p2.x - p1.x;
+			var b = p3.x - p1.x;
+			var c = p2.y - p1.y;
+			var d = p3.y - p1.y;
+			var det = a*d - b*c;
 			this.matrix = $M([
-				[p2.x - p1.x, p3.x - p1.x],
-				[p2.y - p1.y, p3.y - p1.y]
-			]).inv();
+				[d/det, -b/det],
+				[-c/det, a/det]
+			]);
 			// If the matrix in non-invertible this will result in null...
 			// TODO: handle this case gracefully
 		}
@@ -57,7 +62,8 @@ Triangle.prototype = {
 		if( !this.centroid ){
 			this.centroid = {
 				x: (this.points[ this.idx1 ].x + this.points[ this.idx2 ].x + this.points[ this.idx3 ].x)/3,
-				y: (this.points[ this.idx1 ].y + this.points[ this.idx2 ].y + this.points[ this.idx3 ].y)/3
+				y: (this.points[ this.idx1 ].y + this.points[ this.idx2 ].y + this.points[ this.idx3 ].y)/3,
+				tri: this
 			};
 		}
 		return this.centroid;
@@ -89,7 +95,8 @@ Triangle.prototype = {
 		if( !this.centroid || !this.cv1 || !this.cv2 || !this.cv3 ){
 			this.centroid = {
 				x: (this.points[ this.idx1 ].x + this.points[ this.idx2 ].x + this.points[ this.idx3 ].x)/3,
-				y: (this.points[ this.idx1 ].y + this.points[ this.idx2 ].y + this.points[ this.idx3 ].y)/3
+				y: (this.points[ this.idx1 ].y + this.points[ this.idx2 ].y + this.points[ this.idx3 ].y)/3,
+				tri: this
 			};
 			var p1 = this.points[this.idx1];
 			var p2 = this.points[this.idx2];
@@ -143,7 +150,7 @@ Triangle.prototype = {
 			return 2;
 		}
 	},
-	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, trianglesList, dirtyEdges ){
+	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, trianglesList, dirtyEdges, kdTree ){
 		var plusOne = (edge+1)%3;
 		var plusTwo = (edge+2)%3;
 		var newTri = new Triangle(this.points, splitPointIdx, this.getIndex(plusOne), this.getIndex(plusTwo));
@@ -180,12 +187,18 @@ Triangle.prototype = {
 			anotherNewTri.neighbors[0] = this;
 			
 			trianglesList.push( anotherNewTri );
+			if( kdTree ){
+				kdTree.insert( anotherNewTri.getCentroid() );
+			}
 			dirtyEdges.push( [anotherNewTri, 0], [anotherNewTri, 1], [anotherNewTri, 2], [neighbor, neighborPlusTwo] );
 		}
 		trianglesList.push( newTri );
+		if( kdTree ){
+			kdTree.insert( newTri.getCentroid() );
+		}
 		dirtyEdges.push( [newTri, 0], [newTri, 1], [newTri, 2], [this, plusTwo] );
 	},
-	split: function split(splitPointIdx, trianglesList, dirtyEdges){
+	split: function split(splitPointIdx, trianglesList, dirtyEdges, kdTree){
 		var newTri1 = new Triangle(this.points, this.idx1, this.idx2, splitPointIdx);
 		var newTri2 = new Triangle(this.points, splitPointIdx, this.idx2, this.idx3);
 //		var newTri3 = new Triangle(this.points, tri.idx3, tri.idx1, splitPointIdx);
@@ -211,6 +224,10 @@ Triangle.prototype = {
 		this.neighbors[1] = newTri2;
 		
 		trianglesList.push( newTri1, newTri2 );
+		if( kdTree ){
+			kdTree.insert( newTri1.getCentroid() );
+			kdTree.insert( newTri2.getCentroid() );
+		}
 		dirtyEdges.push( [newTri1, 0], [newTri1, 2], [newTri2, 0], [newTri2, 1], [this, 1], [this, 2] );
 	},
 	interpolate: function interpolate(x, y, k, r){
@@ -218,10 +235,15 @@ Triangle.prototype = {
 		var p2 = this.points[this.idx2];
 		var p3 = this.points[this.idx3];
 		if( !this.matrix ){
+			var a = p2.x - p1.x;
+			var b = p3.x - p1.x;
+			var c = p2.y - p1.y;
+			var d = p3.y - p1.y;
+			var det = a*d - b*c;
 			this.matrix = $M([
-				[p2.x - p1.x, p3.x - p1.x],
-				[p2.y - p1.y, p3.y - p1.y]
-			]).inv();
+				[d/det, -b/det],
+				[-c/det, a/det]
+			]);
 		}
 		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) );
 		var u = result.elements[0];

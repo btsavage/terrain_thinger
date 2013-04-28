@@ -77,7 +77,6 @@ function onMouseMove(e){
 }
 
 function onMouseWheel(e){
-	console.log( rho );
 	rho = Math.max(0.5, rho + e.wheelDelta/1000);
 }
 
@@ -264,17 +263,6 @@ function generateTile(mersenneTwister, terrain, tileX, tileY){
 			}
 		}
 	}
-
-/*
-	generateEdge(mersenneTwister, terrain, tileX, tileY, HORIZONTAL, 0);
-	generateEdge(mersenneTwister, terrain, tileX, tileY, VERTICAL, 0);
-	generateEdge(mersenneTwister, terrain, tileX, tileY+1, HORIZONTAL, 1);
-	generateEdge(mersenneTwister, terrain, tileX+1, tileY, VERTICAL, 1);
-*/
-	// Interior Points
-	mersenneTwister.init_genrand( getSeedForInterior(tileX, tileY) );
-	
-	
 }
 
 var THETA_FRICTION = 0.005;

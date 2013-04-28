@@ -43,7 +43,6 @@ Triangulation.prototype = {
 					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges, this.kdTree );
 					
 					this.ensureDelaunay(dirtyEdges);
-					console.log( "edge: ", guesses );
 					return;
 				}
 				
@@ -83,7 +82,6 @@ Triangulation.prototype = {
 					newTri.neighbors[0] = tri;
 					
 					this.ensureDelaunay([[tri, edge]]);
-					console.log("outside: ", guesses);
 					return;
 				}else{
 					tri = neighbor;
@@ -96,7 +94,6 @@ Triangulation.prototype = {
 			}
 			tri.split( this.points.length-1, this.triangles, dirtyEdges, this.kdTree );
 			this.ensureDelaunay(dirtyEdges);
-			console.log("inside: ", guesses);
 		}
 	},
 	distance: function distance(a, b){

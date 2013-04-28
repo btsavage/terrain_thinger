@@ -10,7 +10,10 @@ function Triangle(points, idx1, idx2, idx3){
 		null,			// shares idx2, idx3
 		null 			// shares idx3, idx1
 	];
-	this.matrix = null;
+	this.m_a = NaN;
+	this.m_b = NaN;
+	this.m_c = NaN;
+	this.m_d = NaN;
 	this.centroid = null;
 	this.cv1 = null;
 	this.cv2 = null;
@@ -25,26 +28,28 @@ Triangle.prototype = {
 	 * 3 : inside
 	 * 4 : not contained
 	 */
+	genMatrix: function genMatrix(){
+		var p1 = this.points[this.idx1];
+		var p2 = this.points[this.idx2];
+		var p3 = this.points[this.idx3];
+		var a = p2.x - p1.x;
+		var b = p3.x - p1.x;
+		var c = p2.y - p1.y;
+		var d = p3.y - p1.y;
+		var det = a*d - b*c;
+		this.m_a = d/det;
+		this.m_b = -b/det;
+		this.m_c = -c/det;
+		this.m_d = a/det;
+	},
 	contains: function contains(x, y){
 		var p1 = this.points[this.idx1];
-		if( !this.matrix ){
-			var p2 = this.points[this.idx2];
-			var p3 = this.points[this.idx3];
-			var a = p2.x - p1.x;
-			var b = p3.x - p1.x;
-			var c = p2.y - p1.y;
-			var d = p3.y - p1.y;
-			var det = a*d - b*c;
-			this.matrix = $M([
-				[d/det, -b/det],
-				[-c/det, a/det]
-			]);
-			// If the matrix in non-invertible this will result in null...
-			// TODO: handle this case gracefully
+		if( !this.m_a ){
+			this.genMatrix();
 		}
-		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) ).elements;
-		var u = result[0];
-		var v = result[1];
+
+		var u = this.m_a*(x-p1.x) + this.m_b*(y-p1.y);
+		var v = this.m_c*(x-p1.x) + this.m_d*(y-p1.y);
 		if( Math.abs(u) < EPSILON && 0 <= v && v <= 1 ){
 			return 2;
 		}else if( Math.abs(v) < EPSILON && 0 <= u && u <= 1 ){
@@ -101,18 +106,15 @@ Triangle.prototype = {
 			var p1 = this.points[this.idx1];
 			var p2 = this.points[this.idx2];
 			var p3 = this.points[this.idx3];
-			var rot90 = $M([
-				[0, -1],
-				[1,  0]
-			]);
-			this.cv1 = rot90.x( $V([p1.x - this.centroid.x, p1.y - this.centroid.y]) );
-			this.cv2 = rot90.x( $V([p2.x - this.centroid.x, p2.y - this.centroid.y]) );
-			this.cv3 = rot90.x( $V([p3.x - this.centroid.x, p3.y - this.centroid.y]) );
+			this.cv1 = {x:-(p1.y - this.centroid.y), y:(p1.x - this.centroid.x)};
+			this.cv2 = {x:-(p2.y - this.centroid.y), y:(p2.x - this.centroid.x)};
+			this.cv3 = {x:-(p3.y - this.centroid.y), y:(p3.x - this.centroid.x)};
 		};
-		var v = $V([x - this.centroid.x, y - this.centroid.y]);
-		var test1 = this.cv1.dot( v );
-		var test2 = this.cv2.dot( v );
-		var test3 = this.cv3.dot( v );
+		var v_x = x - this.centroid.x;
+		var v_y = y - this.centroid.y;
+		var test1 = this.cv1.x*v_x + this.cv1.y*v_y;
+		var test2 = this.cv2.x*v_x + this.cv2.y*v_y;
+		var test3 = this.cv3.x*v_x + this.cv3.y*v_y;
 
 		if( context ){
 			context.strokeStyle = "rgb(255, 0, 255)";
@@ -234,20 +236,11 @@ Triangle.prototype = {
 		var p1 = this.points[this.idx1];
 		var p2 = this.points[this.idx2];
 		var p3 = this.points[this.idx3];
-		if( !this.matrix ){
-			var a = p2.x - p1.x;
-			var b = p3.x - p1.x;
-			var c = p2.y - p1.y;
-			var d = p3.y - p1.y;
-			var det = a*d - b*c;
-			this.matrix = $M([
-				[d/det, -b/det],
-				[-c/det, a/det]
-			]);
+		if( !this.m_a ){
+			this.genMatrix();
 		}
-		var result = this.matrix.x( $V([x - p1.x, y - p1.y]) );
-		var u = result.elements[0];
-		var v = result.elements[1];
+		var u = this.m_a*(x-p1.x) + this.m_b*(y-p1.y);
+		var v = this.m_c*(x-p1.x) + this.m_d*(y-p1.y);
 
 		var d1 = Math.sqrt( (p1.x - x)*(p1.x - x) + (p1.y - y)*(p1.y - y) );
 		var d2 = Math.sqrt( (p2.x - x)*(p2.x - x) + (p2.y - y)*(p2.y - y) );
@@ -255,7 +248,7 @@ Triangle.prototype = {
 		
 		var avgDistance = (d1 + d2 + d3)/3;
 		var scaledDistance = (Math.sqrt(avgDistance+0.25) - 0.5);
-		return p1.z + result.dot( $V([p2.z - p1.z, p3.z - p1.z]) ) + 0.2*(scaledDistance)*k*(2*r-1);
+		return p1.z + u*(p2.z - p1.z) + v*(p3.z - p1.z) + 0.2*(scaledDistance)*k*(2*r-1);
 	},
 	replaceNeighbor: function replaceNeighbor(oldTri, newTri){
 		for( var i = 0; i < 3; i++ ){
@@ -311,15 +304,15 @@ Triangle.prototype = {
 			c = this.idx3;
 			break;
 		}
-		var v1 = $V([
-			this.points[a].x - this.points[b].x, 
-			this.points[a].y - this.points[b].y
-		]);
-		var v2 = $V([
-			this.points[c].x - this.points[b].x, 
-			this.points[c].y - this.points[b].y
-		]);
-		return v1.angleFrom( v2 );
+		var v1_x = this.points[a].x - this.points[b].x;
+		var v1_y = this.points[a].y - this.points[b].y;
+
+		var v2_x = this.points[c].x - this.points[b].x;
+		var v2_y = this.points[c].y - this.points[b].y;
+		
+		return Math.acos(
+			(v1_x*v2_x + v1_y*v2_y) / (Math.sqrt(v1_x*v1_x + v1_y*v1_y) * Math.sqrt(v2_x*v2_x + v2_y*v2_y))
+		);
 	},
 	flip: function flip(edge, dirtyEdges){
 		var neighbor = this.neighbors[edge];
@@ -369,7 +362,10 @@ Triangle.prototype = {
 		dirtyEdges.push( [this, edge], [this, edge_plus_2], [neighbor, otherEdge], [neighbor, otherEdge_plus_2] );		
 	},
 	invalidate: function invalidate(){
-		this.matrix = null;
+		this.m_a = NaN;
+		this.m_b = NaN;
+		this.m_c = NaN;
+		this.m_d = NaN;
 		this.centroid = null;
 		this.cv1 = null;
 		this.cv2 = null;

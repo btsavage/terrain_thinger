@@ -152,7 +152,9 @@ Triangle.prototype = {
 			return 2;
 		}
 	},
-	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, trianglesList, dirtyEdges, kdTree ){
+	splitEdgeAt: function splitEdgeAt( splitPointIdx, edge, dirtyEdges ){
+		var newTris = [];
+		
 		var plusOne = (edge+1)%3;
 		var plusTwo = (edge+2)%3;
 		var newTri = new Triangle(this.points, splitPointIdx, this.getIndex(plusOne), this.getIndex(plusTwo));
@@ -188,22 +190,18 @@ Triangle.prototype = {
 			neighbor.neighbors[neighborEdge] = newTri;
 			anotherNewTri.neighbors[0] = this;
 			
-			trianglesList.push( anotherNewTri );
-			if( kdTree ){
-				kdTree.insert( anotherNewTri.getCentroid() );
-			}
+			newTris.push( anotherNewTri );
 			dirtyEdges.push( [anotherNewTri, 0], [anotherNewTri, 1], [anotherNewTri, 2], [neighbor, neighborPlusTwo] );
 		}
-		trianglesList.push( newTri );
-		if( kdTree ){
-			kdTree.insert( newTri.getCentroid() );
-		}
+		newTris.push( newTri );
 		dirtyEdges.push( [newTri, 0], [newTri, 1], [newTri, 2], [this, plusTwo] );
+		return newTris;
 	},
-	split: function split(splitPointIdx, trianglesList, dirtyEdges, kdTree){
+	split: function split(splitPointIdx, dirtyEdges){
+		var newTris = [];
+		
 		var newTri1 = new Triangle(this.points, this.idx1, this.idx2, splitPointIdx);
 		var newTri2 = new Triangle(this.points, splitPointIdx, this.idx2, this.idx3);
-//		var newTri3 = new Triangle(this.points, tri.idx3, tri.idx1, splitPointIdx);
 		
 		newTri1.neighbors[0] = this.neighbors[0];
 		newTri1.neighbors[1] = newTri2;
@@ -225,12 +223,9 @@ Triangle.prototype = {
 		this.neighbors[0] = newTri1;
 		this.neighbors[1] = newTri2;
 		
-		trianglesList.push( newTri1, newTri2 );
-		if( kdTree ){
-			kdTree.insert( newTri1.getCentroid() );
-			kdTree.insert( newTri2.getCentroid() );
-		}
+		newTris.push( newTri1, newTri2 );
 		dirtyEdges.push( [newTri1, 0], [newTri1, 2], [newTri2, 0], [newTri2, 1], [this, 1], [this, 2] );
+		return newTris;
 	},
 	interpolate: function interpolate(x, y, k, r){
 		var p1 = this.points[this.idx1];

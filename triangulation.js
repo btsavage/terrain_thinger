@@ -15,6 +15,12 @@ Triangulation.prototype = {
 			}
 		});
 	},
+	addTriangle: function addTriangle(newTri){
+		this.triangles.push( newTri );
+		if( this.kdTree ){
+			this.kdTree.insert( newTri.getCentroid() );
+		}
+	},
 	addPoint: function addPoint( x, y, z, context ){
 		// TODO: check if it's THE SAME as a point
 		
@@ -40,7 +46,11 @@ Triangulation.prototype = {
 						var r = this.mersenneTwister.random();
 						pt.z = tri.interpolate( x, y, K, r );
 					}
-					tri.splitEdgeAt( this.points.length-1, val, this.triangles, dirtyEdges, this.kdTree );
+					var newTris = tri.splitEdgeAt( this.points.length-1, val, dirtyEdges );
+					
+					for( var i = 0; i < newTris.length; i++ ){
+						this.addTriangle( newTris[i] );
+					}
 					
 					this.ensureDelaunay(dirtyEdges);
 					return;
@@ -74,10 +84,8 @@ Triangulation.prototype = {
 					}
 					
 					var newTri = new Triangle(this.points, p2, p1, this.points.length-1);
-					this.triangles.push( newTri );
-					if( this.kdTree ){
-						this.kdTree.insert( newTri.getCentroid() );
-					}
+					this.addTriangle( newTri );
+
 					tri.neighbors[edge] = newTri;
 					newTri.neighbors[0] = tri;
 					
@@ -92,7 +100,12 @@ Triangulation.prototype = {
 				var r = this.mersenneTwister.random();
 				pt.z = tri.interpolate( x, y, K, r );
 			}
-			tri.split( this.points.length-1, this.triangles, dirtyEdges, this.kdTree );
+			var newTris = tri.split( this.points.length-1, dirtyEdges );
+			
+			for( var i = 0; i < newTris.length; i++ ){
+				this.addTriangle( newTris[i] );
+			}
+			
 			this.ensureDelaunay(dirtyEdges);
 		}
 	},
